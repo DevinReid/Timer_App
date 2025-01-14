@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 import time
 import sqlite3
+import threading
 
 
 # Initialize the app
@@ -51,16 +52,40 @@ def create_ui():
 
     task_note_var.trace("w", enable_start_button)
 
-    start_button = tk.Button(root, text="Start Timer", state="disabled", command=lambda: start_timer(time_var.get(), task_note_var.get()))
+    start_button = tk.Button(root, text="Start Timer", state="disabled", command=lambda: start_timer(time_var.get(), task_note_var.get(), root))
     start_button.grid(row=2, column=0, columnspan=2, pady=20)
 
     # Run the main loop
     root.mainloop()
 
 # Placeholder for the start_timer function
-def start_timer(duration, task_note):
-    messagebox.showinfo("Timer Started", f"Task: {task_note}\nDuration: {duration} minutes")
-    # Timer logic will be implemented later
+# Start the timer and show countdown
+# Start the timer and show countdown
+def start_timer(duration, task_note, root):
+    start_time = time.strftime("%Y-%m-%d %H:%M:%S")  # Capture the start time
+    remaining_time = duration * 60  # Convert minutes to seconds
+
+    def countdown():
+        nonlocal remaining_time
+        while remaining_time > 0:
+            mins, secs = divmod(remaining_time, 60)
+            timer_label.config(text=f"Time Left: {mins:02}:{secs:02}")
+            root.update()
+            time.sleep(1)
+            remaining_time -= 1
+
+        # Handle time up
+        timer_label.config(text="Time's Up!", fg="red")
+        messagebox.showinfo("Time's Up!", "Your timer has ended.")
+
+    # Create a new label for the timer
+    timer_label = tk.Label(root, text=f"Time Left: {duration}:00", font=("Helvetica", 14))
+    timer_label.grid(row=3, column=0, columnspan=2, pady=10)
+
+    # Start the countdown in a new thread
+    threading.Thread(target=countdown).start()
+
+
 
 # Main execution
 if __name__ == "__main__":

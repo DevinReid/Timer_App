@@ -30,6 +30,7 @@ def initialize_database():
 
 # Build the UI
 def create_ui():
+    global start_button
     # Create the main window
     root = tk.Tk()
     root.title("Productivity Timer")
@@ -63,7 +64,8 @@ def create_ui():
 # Start the timer and show countdown
 # Start the timer and show countdown
 def start_timer(duration, task_note, root):
-    global timer_label, pause_resume_button, finish_button, timer_running, is_timer_active
+    global timer_label, pause_resume_button, finish_button, timer_running, is_timer_active, pause_flag, start_button
+
 
     
     is_timer_active = False
@@ -75,9 +77,18 @@ def start_timer(duration, task_note, root):
 
     if 'timer_label' in globals():
         timer_label.config(text=f"Time Left: {duration}:00", fg="black") 
-    if is_timer_active:  # Prevent starting a new timer if one is active
-        messagebox.showwarning("Timer Already Running", "Please finish or stop the current timer before starting a new one.")
-        return
+
+    if is_timer_active:
+        response = messagebox.askyesno("Restart Timer", "A timer is already active. Do you want to restart it?")
+        if not response:
+            return  # Exit if the user doesn't want to restart the timer
+
+        # Reset current timer
+        timer_running = False
+        pause_flag = False
+        is_timer_active = False
+
+    start_button.config(text="Start Timer", state= "disabled")
     def countdown():
         nonlocal remaining_time
         global is_timer_active
@@ -97,9 +108,10 @@ def start_timer(duration, task_note, root):
             timer_label.config(text="Time's Up!", fg="red")
             messagebox.showinfo("Time's Up!", "Your timer has ended.")
         is_timer_active = False
+        start_button.config(text="Start Timer", state="normal")
 
     def toggle_pause_resume():
-        nonlocal pause_flag
+        global pause_flag
         pause_flag = not pause_flag  # Toggle the pause flag
         if pause_flag:
             pause_resume_button.config(text="Resume")
@@ -118,6 +130,7 @@ def start_timer(duration, task_note, root):
         pause_resume_button.grid_remove()
         finish_button.grid_remove()  # Hide the finish button
         is_timer_active = False
+        start_button.config(text="Start Timer", state="normal")
 
     # Create a new label for the timer
     timer_label = tk.Label(root, text=f"Time Left: {duration}:00", font=("Helvetica", 14))

@@ -63,40 +63,68 @@ def create_ui():
 # Start the timer and show countdown
 # Start the timer and show countdown
 def start_timer(duration, task_note, root):
-    global timer_label, finish_button, timer_running
+    global timer_label, pause_resume_button, finish_button, timer_running, is_timer_active
+
+    
+    is_timer_active = False
     start_time = time.strftime("%Y-%m-%d %H:%M:%S")  # Capture the start time
     remaining_time = duration * 60  # Convert minutes to seconds
     timer_running = True
+    pause_flag = False 
 
+
+    if 'timer_label' in globals():
+        timer_label.config(text=f"Time Left: {duration}:00", fg="black") 
+    if is_timer_active:  # Prevent starting a new timer if one is active
+        messagebox.showwarning("Timer Already Running", "Please finish or stop the current timer before starting a new one.")
+        return
     def countdown():
         nonlocal remaining_time
-        while remaining_time > 0 and timer_running:
-            mins, secs = divmod(remaining_time, 60)
-            timer_label.config(text=f"Time Left: {mins:02}:{secs:02}")
-            root.update()
-            time.sleep(1)
-            remaining_time -= 1
+        global is_timer_active
+        while remaining_time > 0:
+            if not timer_running:
+                return
+            if not pause_flag:
+                mins, secs = divmod(remaining_time, 60)
+                timer_label.config(text=f"Time Left: {mins:02}:{secs:02}")
+                root.update()
+                time.sleep(1)
+                remaining_time -= 1
 
-        if not timer_running:
-            return #timer stopped early
+        
 
-        # Handle time up
-        timer_label.config(text="Time's Up!", fg="red")
-        messagebox.showinfo("Time's Up!", "Your timer has ended.")
+        if timer_running:
+            timer_label.config(text="Time's Up!", fg="red")
+            messagebox.showinfo("Time's Up!", "Your timer has ended.")
+        is_timer_active = False
+
+    def toggle_pause_resume():
+        nonlocal pause_flag
+        pause_flag = not pause_flag  # Toggle the pause flag
+        if pause_flag:
+            pause_resume_button.config(text="Resume")
+        else:
+            pause_resume_button.config(text="Pause")
 
     def finish_timer():
         nonlocal remaining_time
+        global is_timer_active, timer_running
         timer_running = False
         elapsed_time = duration * 60 - remaining_time
         end_time = time.strftime("%Y-%m-%d %H:%M:%S")
         messagebox.showinfo("Timer Finished", "Task finished early!")
         timer_label.config(text=f"Finished! Elapsed: {elapsed_time // 60} min {elapsed_time % 60} sec")
         save_record(task_note, start_time, end_time, elapsed_time, duration, finished_early=True)
+        pause_resume_button.grid_remove()
         finish_button.grid_remove()  # Hide the finish button
+        is_timer_active = False
 
     # Create a new label for the timer
     timer_label = tk.Label(root, text=f"Time Left: {duration}:00", font=("Helvetica", 14))
     timer_label.grid(row=3, column=0, columnspan=2, pady=10)
+
+    pause_resume_button = tk.Button(root, text="Pause", command=toggle_pause_resume)
+    pause_resume_button.grid(row=4, column=0, pady=10)
 
        # Create the finish button
     finish_button = tk.Button(root, text="Finish Early", command=finish_timer)
@@ -123,8 +151,8 @@ def save_record(task_note, start_time, end_time, elapsed_time, target_duration, 
         
         # Insert the record into the database
         cursor.execute('''
-            INSERT INTO timer_records (task_note, start_time, end_time, duration, finished_early)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO timer_records (task_note, start_time, end_time, duration, target_duration, finished_early)
+            VALUES (?, ?, ?, ?, ?, ?)
         ''', (task_note, start_time, end_time, elapsed_time, target_duration, finished_early))
 
         conn.commit()

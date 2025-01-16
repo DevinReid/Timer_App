@@ -4,6 +4,7 @@ from tkinter import messagebox
 import time
 import sqlite3
 import threading
+from PIL import Image, ImageTk
 
 
 # Initialize the app
@@ -35,6 +36,7 @@ def create_ui():
     root = tk.Tk()
     root.title("Productivity Timer")
     root.geometry("600x300")
+
 
     # Task note label and entry
     tk.Label(root, text="Task Note:").grid(row=0, column=0, padx=10, pady=10)

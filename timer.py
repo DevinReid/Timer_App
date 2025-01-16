@@ -44,7 +44,7 @@ def create_ui():
     # Time selection label and dropdown
     tk.Label(root, text="Set Time (minutes):").grid(row=1, column=0, padx=10, pady=10)
     time_var = tk.IntVar(value=5)
-    time_options = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
+    time_options = [.01, 1, 2, 3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
     time_menu = tk.OptionMenu(root, time_var, *time_options)
     time_menu.grid(row=1, column=1, padx=10, pady=10)
 
@@ -64,10 +64,10 @@ def create_ui():
 # Start the timer and show countdown
 # Start the timer and show countdown
 def start_timer(duration, task_note, root):
-    global timer_label, pause_resume_button, finish_button, timer_running, is_timer_active, pause_flag, start_button
+    global timer_label, pause_resume_button, finish_button, timer_running, is_timer_active, pause_flag, start_button, total_duration
 
 
-    
+    total_duration = duration
     is_timer_active = False
     start_time = time.strftime("%Y-%m-%d %H:%M:%S")  # Capture the start time
     remaining_time = duration * 60  # Convert minutes to seconds
@@ -90,23 +90,63 @@ def start_timer(duration, task_note, root):
 
     start_button.config(text="Start Timer", state= "disabled")
     def countdown():
+        
         nonlocal remaining_time
-        global is_timer_active
+        global is_timer_active, timer_running, total_duration
         while remaining_time > 0:
-            if not timer_running:
+            if not timer_running:  # Exit if the timer is stopped early
                 return
-            if not pause_flag:
+            if not pause_flag:  # Only decrement if not paused
                 mins, secs = divmod(remaining_time, 60)
-                timer_label.config(text=f"Time Left: {mins:02}:{secs:02}")
+                timer_label.config(text=f"Time Left: {mins:02}:{secs:02}", fg="black")
                 root.update()
                 time.sleep(1)
                 remaining_time -= 1
 
-        
+        if timer_running:  # If the timer ends naturally
+            def handle_keep_recording():
+                # Extend the timer by the selected dropdown value
+                nonlocal remaining_time
+                global timer_running, is_timer_active, total_duration
+                extra_time = extend_time_var.get() * 60  # Convert minutes to seconds
+                remaining_time += extra_time  # Add the extra time
+                total_duration += extend_time_var.get()  # Update the total duration (in minutes)
+                timer_running = True  # Allow the timer to continue
+                is_timer_active = True
+                popup.destroy()  # Close the popup
+                # Restart the countdown
+                threading.Thread(target=countdown).start()
 
-        if timer_running:
-            timer_label.config(text="Time's Up!", fg="red")
-            messagebox.showinfo("Time's Up!", "Your timer has ended.")
+            def handle_finish():
+                global timer_running, is_timer_active
+                timer_running = False  # Stop the timer
+                elapsed_time = duration * 60 - remaining_time
+                end_time = time.strftime("%Y-%m-%d %H:%M:%S")
+                save_record(task_note, start_time, end_time, elapsed_time, total_duration, finished_early=False)
+                popup.destroy()  # Close the popup
+                start_button.config(text="Start Timer", state="normal")  # Reset the button
+                is_timer_active = False
+
+            # Show the "Time's Up" popup with options
+            popup = tk.Toplevel(root)
+            popup.title("Time's Up!")
+            tk.Label(popup, text="Time's up! Do you want to keep recording?").pack(pady=10)
+
+            # Dropdown to select extra time
+            tk.Label(popup, text="Extend by (minutes):").pack()
+            extend_time_var = tk.IntVar(value=5)
+            extend_time_menu = tk.OptionMenu(popup, extend_time_var, 5, 10, 15, 20)
+            extend_time_menu.pack(pady=5)
+
+            # Buttons for user actions
+            tk.Button(popup, text="Keep Recording", command=handle_keep_recording).pack(side="left", padx=10, pady=10)
+            tk.Button(popup, text="Okay", command=handle_finish).pack(side="right", padx=10, pady=10)
+
+            # Wait for the user to make a choice
+            popup.transient(root)
+            popup.grab_set()
+            root.wait_window(popup)
+
         is_timer_active = False
         start_button.config(text="Start Timer", state="normal")
 

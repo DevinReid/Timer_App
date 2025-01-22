@@ -2,7 +2,7 @@
 import tkinter as tk
 from tkinter import messagebox
 import time
-import sqlite3
+import sqlite3 # Need this for the database
 import threading
 from PIL import Image, ImageTk
 
@@ -10,12 +10,12 @@ from PIL import Image, ImageTk
 # Initialize the app
 def initialize_database():
     # Connect to SQLite database (or create it if it doesn't exist)
-    conn = sqlite3.connect("productivity_timer.db")
+    conn = sqlite3.connect("productivity_timer.db") ##this will create the .db file
     cursor = conn.cursor()
 
     # Create a table for storing timer records if it doesn't exist
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS timer_records (
+        CREATE TABLE IF NOT EXISTS timer_records (  
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             task_note TEXT NOT NULL,
             start_time TEXT,
@@ -24,10 +24,10 @@ def initialize_database():
             target_duration INTEGER,
             finished_early BOOLEAN
         )
-    ''')
+    ''') ## this is sql that creates a specific table within the db. you need ''' ''' to do sql in sqlite3.  the rest are the column titles and their data type.
 
-    conn.commit()
-    conn.close()
+    conn.commit()  ##what it sounds like, this pushes the changes to the .db file
+    conn.close() # closes the connection, can and will be reopened again, see the save_record function
 
 # Build the UI
 def create_ui():
@@ -207,17 +207,26 @@ def save_record(task_note, start_time, end_time, elapsed_time, target_duration, 
     """
     try:
         conn = sqlite3.connect("productivity_timer.db")
-        cursor = conn.cursor()
+        cursor = conn.cursor()  ##You always need to call a cursor to make changes, i probably could have made this a global, single variable at the top
 
         
         # Insert the record into the database
         cursor.execute('''
-            INSERT INTO timer_records (task_note, start_time, end_time, duration, target_duration, finished_early)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (task_note, start_time, end_time, elapsed_time, target_duration, finished_early))
+            INSERT INTO timer_records (
+                       task_note,
+                        start_time, 
+                       end_time, 
+                       duration, 
+                       target_duration, 
+                       finished_early) 
 
-        conn.commit()
-        conn.close()
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (task_note, start_time, end_time, elapsed_time, target_duration, finished_early)) ## INSERT INTO calls what table and columns im going to store the data in in what order, 
+        ##VALUES confirms how many values will be used with ? as a placeholder, this is done for security reasons i dont fully understand, has to do with the SQL itself being more vulnerable than python
+        ## finally my actual parameters in Save_record get passed into those value ? slots, replacing them.
+
+        conn.commit() #push changes to .db and close the connection
+        conn.close()# I Call this function whenever i want data saved
         print("Record saved successfully.")
     except Exception as e:
         print(f"Error saving record: {e}")

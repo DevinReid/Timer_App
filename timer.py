@@ -2,13 +2,13 @@
 import tkinter as tk
 from tkinter import messagebox
 import time
-import sqlite3 # Need this for the database
+import sqlite3 ## KYLE -- Need this for the database
 import threading
 from PIL import Image, ImageTk
 
 
 # Initialize the app
-def initialize_database():
+def initialize_database():## KYLE --
     # Connect to SQLite database (or create it if it doesn't exist)
     conn = sqlite3.connect("productivity_timer.db") ##this will create the .db file
     cursor = conn.cursor()
@@ -29,7 +29,7 @@ def initialize_database():
     conn.commit()  ##what it sounds like, this pushes the changes to the .db file
     conn.close() # closes the connection, can and will be reopened again, see the save_record function
 
-# Build the UI
+
 def create_ui():
     global start_button
     # Create the main window
@@ -63,9 +63,7 @@ def create_ui():
     # Run the main loop
     root.mainloop()
 
-# Placeholder for the start_timer function
-# Start the timer and show countdown
-# Start the timer and show countdown
+
 def start_timer(duration, task_note, root):
     global timer_label, pause_resume_button, finish_button, timer_running, is_timer_active, pause_flag, start_button, total_duration, total_elapsed_time
 
@@ -194,7 +192,7 @@ def start_timer(duration, task_note, root):
     # Start the countdown in a new thread
     threading.Thread(target=countdown).start()
 
-def save_record(task_note, start_time, end_time, elapsed_time, target_duration, finished_early):
+def save_record(task_note, start_time, end_time, elapsed_time, target_duration, finished_early): ##KYLE--
     """
     Save the task details to the SQLite database.
     
